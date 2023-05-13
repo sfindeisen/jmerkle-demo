@@ -1,2 +1,6 @@
 # jmerkle-demo
-Merkle tree demo implemented in Java
+A simple in-memory Merkle tree demo
+
+## How to run
+
+## Implementation notes
