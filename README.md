@@ -1,5 +1,6 @@
 # jmerkle-demo
-A simple in-memory Merkle tree demo
+
+A simple in-memory Merkle tree demo with leaf updates
 
 ## How to run
 
