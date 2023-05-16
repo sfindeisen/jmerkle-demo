@@ -6,6 +6,9 @@ import java.util.logging.Logger;
 import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 
+/**
+ * Pointer-based Merkle tree implementation.
+ */
 class MerkleTree {
 
   private static class Node {
