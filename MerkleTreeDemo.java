@@ -151,7 +151,7 @@ class MerkleTree {
   }
 }
 
-public class JMerkleTreeDemo {
+public class MerkleTreeDemo {
 
   private static MessageDigest makeDigest() throws NoSuchAlgorithmException {
     try {
