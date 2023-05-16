@@ -11,6 +11,7 @@ class MerkleTree {
   private static class Node {
     private static final Logger log = Logger.getLogger(Node.class.getName());
 
+    /** This is either raw data (as in a leaf) or hash (as in an internal node). */
     byte[] payload;
     Node parent;
     Node lc;
@@ -31,6 +32,24 @@ class MerkleTree {
   private int taintStart = -1;
   private int taintEnd   = -1;
 
+  public byte[] rootHash() {
+    if (null == root)
+      throw new IllegalStateException("Tree is empty!");
+    return root.payload;
+  }
+
+  private byte[] mkhash() {
+    byte[] res = digest.digest();
+    log.fine("mkhash: " + res);
+    return res;
+  }
+
+  private byte[] mkhash(byte[] data) {
+    byte[] res = digest.digest(data);
+    log.fine("mkhash: " + res);
+    return res;
+  }
+
   private boolean isModified() {
     return (0 <= taintStart) && (taintStart < taintEnd);
   }
@@ -41,6 +60,33 @@ class MerkleTree {
       taintStart = -1;
       taintEnd   = -1;
     }
+  }
+
+  private void recompute_hash(Node node) {
+    // This apparently does the right thing (hash of the concatenation)
+    digest.update(((null == node.lc) ? node.rc : node.lc).payload);
+    digest.update(((null == node.rc) ? node.lc : node.rc).payload);
+    node.payload = mkhash();
+  }
+
+  private void fixup(Node leaf) {
+    leaf.parent.payload = mkhash(leaf.payload);
+    Node prev = leaf.parent;
+    Node node = leaf.parent.parent;
+
+    for (; null != node; prev=node, node=node.parent) {
+      recompute_hash(node);
+    }
+  }
+
+  public void updateLeaf(int index, byte[] data) {
+    if (BlockSize < data.length)
+      throw new IllegalArgumentException("data length (" + data.length + ") is bigger than the block size (" + BlockSize + ")");
+    if ((index < 0) || (leaves.size() <= index))
+      throw new IllegalArgumentException("Invalid leaf index (" + index + "), must be between 0 and " + leaves.size() + " (exclusive)");
+    Node leaf = leaves.get(index);
+    leaf.payload = Arrays.copyOf(data, data.length);
+    fixup(leaf);
   }
 
   private void append(byte[] data, int offset) {
@@ -89,6 +135,8 @@ class MerkleTree {
     sb.append("MerkleTree of " + leaves.size() + " leaves: [");
     sb.append(leaves.stream().mapToInt(l -> l.psize()).mapToObj(String::valueOf).collect(Collectors.joining(",")));
     sb.append("]");
+    if (null != root)
+      sb.append("; root hash: " + rootHash());
     return sb.toString();
   }
 
@@ -120,6 +168,8 @@ public class JMerkleTreeDemo {
     mt.append(new byte[]{1,2,3,4,5,6,7});
     System.out.println(mt.toString());
     mt.append(new byte[]{8,9});
+    System.out.println(mt.toString());
+    mt.updateLeaf(0, new byte[]{20,21,22});
     System.out.println(mt.toString());
   }
 }
