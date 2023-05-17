@@ -192,16 +192,16 @@ public class MerkleTree {
     return res;
   }
 
-  private byte[] mkhash(byte[] data) {
-    byte[] res = digest.digest(data);
-    log.fine(Hex.encodeHexString(res));
-    return res;
+  private byte[] leafHash(byte[] data) {
+    digest.update((byte) 0x0);
+    digest.update(data);
+    return mkhash();
   }
 
   /** Given a 0-based leaf index, updates its hash value. */
   private void recomputeLeafHash(int index0, boolean fixup) {
     final int index1 = leaf2node(index0);
-    node(index1).hashval = mkhash(datablocks.get(index0).payload);
+    node(index1).hashval = leafHash(datablocks.get(index0).payload);
     if (fixup)
       fixUp(index1);
   }
@@ -219,8 +219,9 @@ public class MerkleTree {
     Node rc = node(rci(index1));
 
     // This apparently does the right thing (hash of the concatenation)
-    // TODO but mind the second preimage attack!
+    digest.update((byte) 0x1);
     digest.update(((null == lc) ? rc : lc).hashval);
+    digest.update((byte) 0x1);
     digest.update(((null == rc) ? lc : rc).hashval);
     nd.hashval = mkhash();
   }
@@ -304,7 +305,7 @@ public class MerkleTree {
       datablocks.add(block);
 
       Node leaf = new Node();
-      leaf.hashval = mkhash(block.payload);
+      leaf.hashval = leafHash(block.payload);
       nodes.set(leafptr + k, leaf);
     }
   }
@@ -363,7 +364,7 @@ public class MerkleTree {
         log.fine("fill up the last block first");
         lastBlock.append(data, 0, freeBytes);
         // we cannot call recomputeLeafHash here because of the displaced root mode
-        node(lastLeaf1).hashval = mkhash(lastBlock.payload);
+        node(lastLeaf1).hashval = leafHash(lastBlock.payload);
         // create and append the remaining new leaves
         log.fine("create the remaining blocks");
         appendDataBlocks(data, freeBytes, leafPtr);
