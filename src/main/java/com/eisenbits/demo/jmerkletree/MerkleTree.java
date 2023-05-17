@@ -1,11 +1,9 @@
 package com.eisenbits.demo.jmerkletree;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
-import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 
 import org.apache.commons.codec.binary.Hex;

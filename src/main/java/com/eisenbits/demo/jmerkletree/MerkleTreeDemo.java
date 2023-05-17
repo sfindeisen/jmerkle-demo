@@ -3,12 +3,8 @@ package com.eisenbits.demo.jmerkletree;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
-import java.util.random.RandomGenerator;
-import java.util.stream.Collectors;
 
 public class MerkleTreeDemo {
 
@@ -39,9 +35,7 @@ public class MerkleTreeDemo {
 
   public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
     configureLogging();
-
     MessageDigest digest = makeDigest();
-    RandomGenerator rg = RandomGenerator.of("L64X128MixRandom");
 
     MerkleTree mt = new MerkleTree(digest, 5);
     System.out.println(mt.toString());
