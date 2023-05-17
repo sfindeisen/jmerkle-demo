@@ -18,5 +18,6 @@ mvn test
 This will run a simple command-line demo:
 
 ```shell
-mvn exec:java -Dexec.mainClass="com.eisenbits.demo.jmerkletree.MerkleTreeDemo"
+mvn package
+java -jar ./target/jmerkletreedemo-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
