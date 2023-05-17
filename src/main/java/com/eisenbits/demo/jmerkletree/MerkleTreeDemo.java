@@ -1,14 +1,33 @@
 package com.eisenbits.demo.jmerkletree;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
+import java.util.logging.LogManager;
 import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 
 public class MerkleTreeDemo {
+
+  private static final Logger log = Logger.getLogger(MerkleTreeDemo.class.getName());
+
+  /**
+   * Configures java.util.logging using the logging.properties file.
+   *
+   * Based on: https://stackoverflow.com/a/14944846 .
+   */
+  private static void configureLogging() throws IOException {
+    final String logFile = System.getProperty("java.util.logging.config.file");
+    if (null == logFile) {
+      log.info("try to configure logging using logging.properties file from the classpath");
+      LogManager.getLogManager().readConfiguration(MerkleTreeDemo.class.getClassLoader().getResourceAsStream("logging.properties"));
+    } else {
+      log.info("logging config file: " + logFile);
+    }
+  }
 
   private static MessageDigest makeDigest() throws NoSuchAlgorithmException {
     try {
@@ -18,7 +37,9 @@ public class MerkleTreeDemo {
     }
   }
 
-  public static void main(String[] args) throws NoSuchAlgorithmException {
+  public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+    configureLogging();
+
     MessageDigest digest = makeDigest();
     RandomGenerator rg = RandomGenerator.of("L64X128MixRandom");
 
