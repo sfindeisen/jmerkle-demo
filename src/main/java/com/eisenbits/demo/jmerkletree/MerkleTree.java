@@ -8,6 +8,8 @@ import java.util.logging.Logger;
 import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 
+import org.apache.commons.codec.binary.Hex;
+
 /**
  * ArrayList-based mutable Merkle tree implementation with bulk append and leaf update.
  */
@@ -180,24 +182,21 @@ public class MerkleTree {
     }
   }
 
-  public byte[] rootHash() {
+  public String rootHash() {
     if ((null == nodes) || (nodes.size() <= 1) || (null == nodes.get(1)))
       throw new IllegalStateException("Tree is empty!");
-    // TODO fix reference leak
-    return nodes.get(1).hashval;
+    return Hex.encodeHexString(nodes.get(1).hashval);
   }
 
   private byte[] mkhash() {
     byte[] res = digest.digest();
-    // TODO improve this string
-    log.fine(Arrays.toString(res));
+    log.fine(Hex.encodeHexString(res));
     return res;
   }
 
   private byte[] mkhash(byte[] data) {
     byte[] res = digest.digest(data);
-    // TODO improve this string
-    log.fine(Arrays.toString(res));
+    log.fine(Hex.encodeHexString(res));
     return res;
   }
 
