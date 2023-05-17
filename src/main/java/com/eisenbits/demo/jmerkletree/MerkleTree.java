@@ -58,9 +58,9 @@ public class MerkleTree {
 
   /**
    * A 1-based array containing all the leaves and internal nodes together.
-   * The first slot is empty (null). See below for addressing.
+   * The first slot is empty (null).
    *
-   * TODO fix doc
+   * For a detailed description: https://en.wikipedia.org/wiki/Binary_tree#Arrays .
    */
   private ArrayList<Node> nodes = new ArrayList<>();
 
