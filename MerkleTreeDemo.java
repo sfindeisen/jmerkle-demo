@@ -51,7 +51,7 @@ class MerkleTree {
    *
    * TODO this could easily be fixed by substituting ArrayList with our own resizable array implementation
    */
-  public static final int MaxBlocks = Integer.MAX_VALUE/2 - 5;
+  public static final int MaxBlocks = Integer.MAX_VALUE/4 - 5;
   private final int BlockSize;
 
   /**
@@ -77,9 +77,11 @@ class MerkleTree {
   // initialize pow2 array
   static {
     pow2 = new int[1 + Integer.SIZE];
-    int k = 1;
-    for (int j=0; (j < pow2.length) && (1 <= k) && (k <= Integer.MAX_VALUE); ++j, k+=k)
+    Arrays.fill(pow2, 0);
+    for (int j=0, k=1; (j < pow2.length) && (1 <= k) && (k <= Integer.MAX_VALUE); ++j, k+=k) {
+      // System.out.println("j=" + j + " k=" + k + " max=" + Integer.MAX_VALUE);
       pow2[j] = k;
+    }
   }
 
   /** Finds the smallest exponent k such that: j <= 2^k. */
@@ -151,24 +153,25 @@ class MerkleTree {
    *
    * This leaves the nodes array in an inconsistent state (displaced root)!
    *
-   * @param newLeafCnt new number of leaves
+   * @param newLeafCount new number of leaves
    */
-  private void resize(int newLeafCnt) {
-    final int newLeafRowP = findp2(newLeafCnt);                 // new bottom level
-    final int newNodeCnt  = pow2[newLeafRowP] + newLeafCnt - 1; // new total number of nodes (not including the empty slot)
-    final int hdiff = newLeafRowP - leafrowp;
+  private void resize(int newLeafCount) {
+    final int newLeafRowPtr = findp2(newLeafCount);                   // new bottom level
+    final int newNodeCount  = pow2[newLeafRowPtr] + newLeafCount - 1; // new total number of nodes (not including the empty slot)
+    final int hdiff = newLeafRowPtr - leafrowp;
 
-    log.fine("leafCount=" + leafCount() + " leafrowp=" + leafrowp + " newNodeCnt=" + newNodeCnt +
-             " newLeafCnt=" + newLeafCnt + " newLeafRowP=" + newLeafRowP + " hdiff=" + hdiff);
-    resizeNodes(newNodeCnt);
+    log.fine("leafCount=" + leafCount() + " leafrowp=" + leafrowp + " newNodeCount=" + newNodeCount +
+             " newLeafCount=" + newLeafCount + " newLeafRowPtr=" + newLeafRowPtr + " hdiff=" + hdiff);
+    resizeNodes(newNodeCount);
 
     // iterate over the tree levels from bottom to top, moving them downwards (and leftwards)
     for (int level=leafrowp; 0 <= level; --level) {
       // move the entire level of nodes downwards (and leftwards)
+      log.fine("move row " + level + " downwards to " + (level+hdiff));
       for (int i=0; (i < pow2[level]) && (null != nodes.get(pow2[level] + i)); ++i) {
         final int j = pow2[level] + i;
         final int k = pow2[level+hdiff] + i;
-        log.fine("move " + j + " to " + k);
+        log.fine("move node " + j + " to " + k);
         nodes.set(k, nodes.get(j));
         nodes.set(j, null);
       }
@@ -184,12 +187,14 @@ class MerkleTree {
 
   private byte[] mkhash() {
     byte[] res = digest.digest();
+    // TODO improve this string
     log.fine(Arrays.toString(res));
     return res;
   }
 
   private byte[] mkhash(byte[] data) {
     byte[] res = digest.digest(data);
+    // TODO improve this string
     log.fine(Arrays.toString(res));
     return res;
   }
@@ -237,20 +242,23 @@ class MerkleTree {
    * @param   toIndex1   end index (exclusive)
    */
   private void fixUpMultiple(int fromIndex1, int toIndex1) {
-    log.fine("fixUpMultiple: " + fromIndex1 + " .. " + toIndex1);
+    log.fine(fromIndex1 + " .. " + toIndex1);
     if (toIndex1 <= fromIndex1)
       return;
 
     for (int i=fromIndex1; i < toIndex1; ++i) {
       final int pind1 = parind(i);
-      Node pnode = nodes.get(pind1);
+      if (pind1 <= 0)
+        continue;
 
-      if (null == pnode) {
+      final Node pnode = nodes.get(pind1);
+      log.fine("i=" + i + ", pind=" + pind1 + ": " + pnode);
+
+      if (null == pnode)
         nodes.set(pind1, new Node());
-        if ((i == (2 * pind1 + 1)) || (toIndex1 == i+1)) {
-          // Either i is the right child or the last child (there is no right child)
+      if ((i == (2 * pind1 + 1)) || (toIndex1 == i+1)) {
+          // Either i is the right child or there is no right child
           recomputeInnerNodeHash(pind1);
-        }
       }
     }
 
@@ -265,6 +273,7 @@ class MerkleTree {
    * @param index0 must be between 0 (inclusive) and leafCount() (exclusive)
    */
   public void updateLeaf(int index0, byte[] data) {
+    log.info(index0 + "; data.length=" + data.length);
     if (BlockSize < data.length)
       throw new IllegalArgumentException("data length (" + data.length + ") is bigger than the allowed block size (" + BlockSize + ")");
     if ((index0 < 0) || (leafCount() <= index0))
@@ -287,6 +296,7 @@ class MerkleTree {
    * @return the number of new data blocks equal to the number of new leaves
    */
   private void appendDataBlocks(byte[] data, int offset, int leafptr) {
+    log.fine("data.length=" + data.length + " offset=" + offset + " leafptr=" + leafptr);
     datablocks.ensureCapacity(1 + (data.length - offset) / BlockSize);
 
     for (int i=offset, k=0; i < data.length; i+=BlockSize, ++k) {
@@ -302,6 +312,8 @@ class MerkleTree {
 
   /** Modifies the tree by inserting the given data chunk at the end. */
   public void append(byte[] data) {
+    log.info("data.length=" + data.length);
+
     if (0 == data.length)
       return;
 
@@ -331,6 +343,7 @@ class MerkleTree {
     final int newLeafRowPtr = findp2(allBlocks);
 
     if (leafrowp < newLeafRowPtr) {
+      log.fine("resize the tree");
       // leaves do not fit in the current level anymore and must be moved downwards
       resize(allBlocks);
       // The root node is now displaced!
@@ -342,15 +355,18 @@ class MerkleTree {
 
       if (0 == freeBytes) {
         // Either no data or last block is full: start a new block
+        log.fine("start a new block");
         appendDataBlocks(data, 0, leafPtr);
         fixUpMultiple(leafPtr, leafPtr + newBlocks);
       } else {
         // data.length > freeBytes (because of the new row)
         // Last block exists and is not full: fill it up first
+        log.fine("fill up the last block first");
         lastBlock.append(data, 0, freeBytes);
         // we cannot call recomputeLeafHash here because of the displaced root mode
         node(lastLeaf1).hashval = mkhash(lastBlock.payload);
         // create and append the remaining new leaves
+        log.fine("create the remaining blocks");
         appendDataBlocks(data, freeBytes, leafPtr);
         // Fix the internal hashes, including the former last leaf path
         fixUpMultiple(lastLeaf1, lastLeaf1 + newBlocks + 1);
@@ -365,6 +381,7 @@ class MerkleTree {
       final int lastLeaf1 = datablocks.isEmpty() ? 0 : leaf2node(lastLeaf0);
 
       // Just append the new leaves to the existing leaf row in the tree - no restructure needed.
+      log.fine("new leaves will fit in the last row");
       // Make some space in the nodes array...
       resizeNodes(oldNodes + newBlocks);
       // New leaves start here
@@ -372,19 +389,23 @@ class MerkleTree {
 
       if (0 == freeBytes) {
         // Either no data or last block is full: start a new block
+        log.fine("start a new block");
         appendDataBlocks(data, 0, leafPtr);
         fixUpMultiple(leafPtr, leafPtr + newBlocks);
       } else {
         // Last block exists and is not full: fill it up first
         if (data.length <= freeBytes) {
           // Free space in the last block is big enough to hold the entire new data
+          log.fine("new data fits in the last block, hooray!");
           lastBlock.append(data);
           recomputeLeafHash(lastLeaf0, true);
         } else {
           // Fill up the last block
+          log.fine("fill up the last block first");
           lastBlock.append(data, 0, freeBytes);
           recomputeLeafHash(lastLeaf0, false);
           // create and append the remaining new leaves
+          log.fine("create the remaining blocks");
           appendDataBlocks(data, freeBytes, leafPtr);
           // Fix the internal hashes, including the former last leaf path
           fixUpMultiple(lastLeaf1, lastLeaf1 + newBlocks + 1);
@@ -394,12 +415,27 @@ class MerkleTree {
   }
 
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append(datablocks.size() + " data blocks: [");
+    final String linesep = System.lineSeparator();
+    final StringBuilder sb = new StringBuilder();
+
+    sb.append("MerkleTree of " + datablocks.size() + " data blocks: [");
     sb.append(datablocks.stream().mapToInt(l -> l.psize()).mapToObj(String::valueOf).collect(Collectors.joining(",")));
-    sb.append("]");
+    sb.append("]; leafrowp=" + leafrowp);
+    sb.append("; nodes: ");
+
+    if (nodes.isEmpty()) {
+      sb.append("[]");
+    } else {
+      for (int i=0; i < nodes.size(); ++i) {
+        if (0 == (i & (i-1)))
+          sb.append(linesep);
+        sb.append(" " + (null == nodes.get(i) ? "N" : "."));
+      }
+    }
+
     if (! isEmpty())
-      sb.append("; root hash: " + rootHash());
+      sb.append(linesep + "rootHash=" + rootHash());
+
     return sb.toString();
   }
 
@@ -411,6 +447,8 @@ class MerkleTree {
     this.BlockSize = blockSize;
     this.nodes.add(null); // 1st slot is empty
 
+    log.info("max block size: " + BlockSize);
+    log.info("max blocks: " + MaxBlocks);
     log.info("hash function: " + digest.getAlgorithm());
     log.info("pow2: " + Arrays.toString(pow2));
   }
@@ -429,11 +467,16 @@ public class MerkleTreeDemo {
   public static void main(String[] args) throws NoSuchAlgorithmException {
     MessageDigest digest = makeDigest();
     RandomGenerator rg = RandomGenerator.of("L64X128MixRandom");
+
     MerkleTree mt = new MerkleTree(digest, 5);
+    System.out.println(mt.toString());
+
     mt.append(new byte[]{1,2,3,4,5,6,7});
     System.out.println(mt.toString());
+
     mt.append(new byte[]{8,9});
     System.out.println(mt.toString());
+
     mt.updateLeaf(0, new byte[]{20,21,22});
     System.out.println(mt.toString());
   }
