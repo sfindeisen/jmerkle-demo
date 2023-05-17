@@ -1,3 +1,5 @@
+package com.eisenbits.demo.jmerkletree;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -9,7 +11,7 @@ import java.util.stream.Collectors;
 /**
  * ArrayList-based mutable Merkle tree implementation with bulk append and leaf update.
  */
-class MerkleTree {
+public class MerkleTree {
 
   /** Either a leaf (no children) or an internal node (1 or 2 children). */
   private static class Node {
@@ -451,33 +453,5 @@ class MerkleTree {
     log.info("max blocks: " + MaxBlocks);
     log.info("hash function: " + digest.getAlgorithm());
     log.info("pow2: " + Arrays.toString(pow2));
-  }
-}
-
-public class MerkleTreeDemo {
-
-  private static MessageDigest makeDigest() throws NoSuchAlgorithmException {
-    try {
-      return MessageDigest.getInstance("SHA-128");
-    } catch (NoSuchAlgorithmException e) {
-      return MessageDigest.getInstance("SHA-256");
-    }
-  }
-
-  public static void main(String[] args) throws NoSuchAlgorithmException {
-    MessageDigest digest = makeDigest();
-    RandomGenerator rg = RandomGenerator.of("L64X128MixRandom");
-
-    MerkleTree mt = new MerkleTree(digest, 5);
-    System.out.println(mt.toString());
-
-    mt.append(new byte[]{1,2,3,4,5,6,7});
-    System.out.println(mt.toString());
-
-    mt.append(new byte[]{8,9});
-    System.out.println(mt.toString());
-
-    mt.updateLeaf(0, new byte[]{20,21,22});
-    System.out.println(mt.toString());
   }
 }
