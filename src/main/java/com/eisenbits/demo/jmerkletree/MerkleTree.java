@@ -221,7 +221,7 @@ public class MerkleTree {
 
     Node nd = node(index1);
     Node lc = node(lci(index1));
-    Node rc = node(rci(index1));
+    Node rc = ((rci(index1) < nodes.size()) ? node(rci(index1)) : null);
 
     // This apparently does the right thing (hash of the concatenation)
     digest.update((byte) 0x1);
