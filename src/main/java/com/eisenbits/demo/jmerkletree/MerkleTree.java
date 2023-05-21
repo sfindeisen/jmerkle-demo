@@ -22,6 +22,11 @@ public class MerkleTree {
      * is only one child, it gets repeated.
      */
     byte[] hashval;
+
+    @Override
+    public String toString() {
+      return ((null == hashval) ? "<null hash>" : Hex.encodeHexString(hashval));
+    }
   }
 
   /** User data blocks, corresponding 1-1 to leaves in the tree. */
@@ -414,6 +419,7 @@ public class MerkleTree {
     }
   }
 
+  @Override
   public String toString() {
     final String linesep = System.lineSeparator();
     final StringBuilder sb = new StringBuilder();
