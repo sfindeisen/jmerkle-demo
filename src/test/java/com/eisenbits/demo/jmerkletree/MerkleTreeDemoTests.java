@@ -189,6 +189,36 @@ class MerkleTreeDemoTests {
   }
 
   @Test
+  void tree20append4wupdate() throws NoSuchAlgorithmException {
+    MessageDigest digest = makeDigest();
+    MerkleTree mt = new MerkleTree(digest, 3);
+
+    mt.append(new byte[]{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20});
+    assertEquals(7, mt.leafCount());
+    assertEquals("257430c9dc285855d7c5297172e40c7bfdcde80f17a6e65efa5630078cd50969", mt.rootHash());
+
+    mt.append(new byte[]{8,0,0,0});
+    assertEquals(8, mt.leafCount());
+    assertEquals("c9a2287c49d352d5e23b8e4e5e00242aeed69f43cc09a9614ce83c29e0358f98", mt.rootHash());
+
+    mt.updateLeaf(7, new byte[]{9,10,11});
+    assertEquals(8, mt.leafCount());
+    assertEquals("4b5f7917b964575ef171412abee3a1894e449947ce80d8dbc36f8c9d60573eff", mt.rootHash());
+
+    mt.updateLeaf(1, new byte[]{4,5,6});
+    assertEquals(8, mt.leafCount());
+    assertEquals("4b5f7917b964575ef171412abee3a1894e449947ce80d8dbc36f8c9d60573eff", mt.rootHash());
+
+    mt.updateLeaf(0, new byte[]{1,2,3});
+    assertEquals(8, mt.leafCount());
+    assertEquals("4b5f7917b964575ef171412abee3a1894e449947ce80d8dbc36f8c9d60573eff", mt.rootHash());
+
+    mt.updateLeaf(4, new byte[]{13,14,15});
+    assertEquals(8, mt.leafCount());
+    assertEquals("4b5f7917b964575ef171412abee3a1894e449947ce80d8dbc36f8c9d60573eff", mt.rootHash());
+  }
+
+  @Test
   void tree20append5() throws NoSuchAlgorithmException {
     MessageDigest digest = makeDigest();
     MerkleTree mt = new MerkleTree(digest, 3);
