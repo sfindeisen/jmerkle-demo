@@ -15,6 +15,15 @@ class MerkleTreeDemoTests {
   }
 
   @Test
+  void emptyTree() throws NoSuchAlgorithmException {
+    MessageDigest digest = makeDigest();
+    MerkleTree mt = new MerkleTree(digest, 5);
+    assertTrue(mt.isEmpty());
+    assertEquals(0, mt.leafCount());
+  }
+
+
+  @Test
   void smallTree() throws NoSuchAlgorithmException {
     MessageDigest digest = makeDigest();
 
